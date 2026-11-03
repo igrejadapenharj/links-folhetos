@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecionando...</title>
+    <script>
+        // COLE AQUI O LINK CSV QUE VOCÊ GEROU NO GOOGLE SHEETS
+        const urlPlanilhaCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQI8XE84wE6R9l8qxJ1WaQFpO8tq9KSc6Xm6-7MFaKsO5oTTD-m8ziNzx3i3N1NhCW3bCNRAYOUonCL/pub?output=csv'; 
+        
+        // Link de fallback caso hoje não tenha nenhuma data correspondente
+        const urlPadrao = 'https://www.igrejadapenharj.org.br/folheto-da-missa';
+
+        function obterDataHoje() {
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        async function buscarERedirecionar() {
+            try {
+                const resposta = await fetch(urlPlanilhaCSV);
+                const dadosCSV = await resposta.text();
+                
+                const hoje = obterDataHoje();
+                let destino = urlPadrao;
+
+                // Divide o CSV em linhas e ignora a primeira (que é o cabeçalho)
+                const linhas = dadosCSV.split('\n').slice(1);
+
+                for (let linha of linhas) {
+                    if (!linha.trim()) continue; // Pula linhas em branco
+                    
+                    // Divide a linha pelas vírgulas
+                    const [dataInicio, dataFim, url] = linha.split(',');
+
+                    // Limpa possíveis espaços em branco
+                    const inicioLimp = dataInicio.trim();
+                    const fimLimp = dataFim.trim();
+                    const urlLimp = url.trim();
+
+                    // Verifica se a data de hoje está dentro do intervalo
+                    if (hoje >= inicioLimp && hoje <= fimLimp) {
+                        destino = urlLimp;
+                        break; // Para o loop ao encontrar o link do dia
+                    }
+                }
+
+                // Redireciona o usuário
+                window.location.replace(destino);
+
+            } catch (erro) {
+                console.error("Erro ao ler a planilha:", erro);
+                // Em caso de erro (ex: sem internet), manda pro link padrão
+                window.location.replace(urlPadrao); 
+            }
+        }
+
+        // Executa a função assim que a página carrega
+        buscarERedirecionar();
+    </script>
+</head>
+<body>
+    <p style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+        Buscando o link do dia e redirecionando...
+    </p>
+</body>
+</html>
